@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"math/rand"
 	"strings"
@@ -12,7 +13,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-const (
+var (
 	endpoint   = ""
 	bucketName = ""
 	username   = ""
@@ -82,7 +83,13 @@ func writer(ctx context.Context, col *gocb.Collection) error {
 
 func main() {
 
-	numWrite := 60
+	flag.StringVar(&endpoint, "endpoint", "", "Capella Cluster A Record")
+	flag.StringVar(&bucketName, "bucket", "travel-sample", "Bucket name of Capella Cluster")
+	flag.StringVar(&username, "username", "admin", "Username for Database Access Credentials")
+	flag.StringVar(&password, "password", "admin", "Password for Database Access Credentials")
+	flag.Parse()
+
+	numWrite := 30
 	bigString = generateRandomString(10000000)
 
 	eg, ctx := errgroup.WithContext(context.Background())
