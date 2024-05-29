@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/x509"
 	"flag"
 	"fmt"
 	"math/rand"
@@ -18,6 +19,7 @@ var (
 	bucketName = ""
 	username   = ""
 	password   = ""
+	ca         = ""
 )
 
 type User struct {
@@ -87,12 +89,21 @@ func main() {
 	flag.StringVar(&bucketName, "bucket", "travel-sample", "Bucket name of Capella Cluster")
 	flag.StringVar(&username, "username", "admin", "Username for Database Access Credentials")
 	flag.StringVar(&password, "password", "admin", "Password for Database Access Credentials")
+	flag.StringVar(&ca, "ca", "", "Signing Authority Certificate")
 	flag.Parse()
 
 	numWrite := 30
 	bigString = generateRandomString(10000000)
 
 	eg, ctx := errgroup.WithContext(context.Background())
+
+	cp := x509.NewCertPool()
+	if ok := cp.AppendCertsFromPEM([]byte(ca)); !ok {
+		panic("failed to pass ca cert")
+	}
+	sec := gocb.SecurityConfig{
+		TLSRootCAs: cp,
+	}
 
 	cluster, err := gocb.Connect("couchbases://"+endpoint, gocb.ClusterOptions{
 		Authenticator: gocb.PasswordAuthenticator{
@@ -103,6 +114,7 @@ func main() {
 			ConnectTimeout: 10 * time.Second,
 			KVTimeout:      20 * time.Second,
 		},
+		SecurityConfig: sec,
 	})
 	if err != nil {
 		panic(err)
